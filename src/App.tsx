@@ -9,6 +9,7 @@ function App(): JSX.Element {
   const [videoLoaded, setVideoLoaded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const youtubeLinkInputRef = useRef<HTMLInputElement>(null);
 
   const draw = useCallback(
     (ctx: CanvasRenderingContext2D, video: HTMLVideoElement) => {
@@ -30,9 +31,32 @@ function App(): JSX.Element {
     }
   };
 
+  const handleYoutubeLink = async (): Promise<void> => {
+    const url = "https://www.youtube.com/watch?v=17ntdUP5-Do";
+    const response = await fetch(
+      `https://youtube.com/get_video_info?video_id=${url}`
+    );
+    const data = await response.json();
+    console.log(data);
+  };
+
   useEffect(() => {
     videoRef.current?.load();
-  }, [videoSrc]);
+    const listenerFn = (): void => {
+      const canvas = canvasRef.current;
+      const video = videoRef.current;
+      if (canvas == null || video == null || !videoLoaded) return;
+      const { height } = video.getBoundingClientRect();
+      const { width } = video.getBoundingClientRect();
+      canvas.height = height;
+      canvas.width = width;
+      setSize({ width, height });
+    };
+    window.addEventListener("resize", listenerFn);
+    return () => {
+      window.removeEventListener("resize", listenerFn);
+    };
+  }, [videoLoaded]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -70,14 +94,22 @@ function App(): JSX.Element {
         </canvas>
       </div>
       <div className="upload-container">
-        <label htmlFor="input">
+        <label htmlFor="upload">
           Upload a video
           <input
             type="file"
-            id="input"
+            id="upload"
             onChange={handleChange}
             accept="video/*"
           />
+        </label>
+        <span>or</span>
+        <label htmlFor="url">
+          Enter a YouTube URL
+          <input type="text" id="url" ref={youtubeLinkInputRef} />
+          <button type="button" onClick={handleYoutubeLink}>
+            Submit
+          </button>
         </label>
       </div>
     </div>
